@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #home-page, #step-by-step-page {
+            display: none;
+        }
+
+        #home-page {
+            display: block;
+        }
+
+        #homeBtn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        #controls {
+            position: absolute;
+            left: 20px;
+            top: 100px;
+            width: 150px;
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #controls label,
+        #controls select,
+        #controls button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        #visualization {
+            margin-left: 150px; /* 向左移動 */
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            position: relative;
+            padding-bottom: 50px; /* 增加下方空間，避免與按鈕重疊 */
+        }
+
+        .bar {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background-color: rgb(50, 252, 104);
+            width: 30px;
+            color: black;
+            font-weight: bold;
+            font-size: 14px;
+            border: 1px solid #000;
+            margin-top: auto;
+            position: relative;
+        }
+
+        .bar-label {
+            padding-bottom: 5px;
+        }
+
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 20px solid red;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #navigation-buttons {
+            margin-top: 20px; /* 增加上下之間的距離 */
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #description {
+            margin-top: 40px; /* 增加敘述與按鈕之間的距離 */
+            padding: 10px;
+            font-size: 1.2rem;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="home-page">
+        <h1>Sorting Algorithm Visualizer</h1>
+        <div class="center">
+            <button id="stepByStepBtn">Step by Step</button>
+        </div>
+    </div>
+
+    <div id="step-by-step-page">
+        <h1>Step by Step</h1>
+        <button id="homeBtn">Home</button>
+
+        <div id="controls">
+            <label for="algorithm">Choose Algorithm:</label>
+            <select id="algorithm">
+                <option value="bubbleSort">Bubble Sort</option>
+            </select>
+
+            <button id="randomizeArray">Random</button>
+        </div>
+
+        <div id="visualization"></div>
+
+        <div id="navigation-buttons">
+            <button id="prevBtn">Prev</button>
+            <button id="nextBtn">Next</button>
+        </div>
+
+        <div id="description">
+            <strong>Description:</strong>
+            <p id="descText">Here will be the explanation of each step.</p>
+        </div>
+    </div>
+
+    <script>
+        const stepByStepBtn = document.getElementById("stepByStepBtn");
+        const homeBtn = document.getElementById("homeBtn");
+
+        const homePage = document.getElementById("home-page");
+        const stepByStepPage = document.getElementById("step-by-step-page");
+
+        stepByStepBtn.addEventListener("click", () => {
+            homePage.style.display = "none";
+            stepByStepPage.style.display = "block";
+        });
+
+        homeBtn.addEventListener("click", () => {
+            stepByStepPage.style.display = "none";
+            homePage.style.display = "block";
+        });
+
+        const visualization = document.getElementById("visualization");
+        let bars = [];
+        let currentStep = 0;
+        let sortingSteps = [];
+        let swapIndices = [];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function generateRandomBars() {
+            bars = [];
+            visualization.innerHTML = '';
+
+            const values = Array.from({ length: 10 }, (_, i) => i + 1);
+            const shuffledValues = shuffle(values);
+
+            shuffledValues.forEach(value => {
+                const bar = document.createElement("div");
+                bar.style.height = value * 30 + "px";
+                bar.classList.add("bar");
+
+                const barLabel = document.createElement("span");
+                barLabel.textContent = value;
+                barLabel.classList.add("bar-label");
+
+                bar.appendChild(barLabel);
+                visualization.appendChild(bar);
+                bars.push(value);
+            });
+
+            sortingSteps = bubbleSortStep(bars);
+            currentStep = 0;
+            updateBars(bars, -1, -1);
+            
+            //after random button 
+            document.getElementById("descText").textContent = "Here will be the explanation of each step.";
+        }
+
+        function bubbleSortStep(arr) {
+            let steps = [];
+            let array = arr.slice();
+            swapIndices = [];
+            for (let i = 0; i < array.length - 1; i++) {
+                for (let j = 0; j < array.length - i - 1; j++) {
+                    // 每次比較都記錄當前狀態
+                    steps.push(array.slice());
+                    swapIndices.push([j, j + 1]);
+                    if (array[j] > array[j + 1]) {
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                    }
+                }
+            }
+            return steps;
+        }
+
+        document.getElementById("randomizeArray").addEventListener("click", generateRandomBars);
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            if (currentStep < sortingSteps.length) {
+                const [index1, index2] = swapIndices[currentStep];
+                updateBars(sortingSteps[currentStep], index1, index2);
+                updateDescription(index1, index2);
+                currentStep++;
+            }
+        });
+
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            if (currentStep > 0) {
+                currentStep--;
+                const [index1, index2] = swapIndices[currentStep];
+                updateBars(sortingSteps[currentStep], index1, index2);
+                updateDescription(index1, index2);
+            }
+        });
+
+        function updateBars(arr, index1, index2) {
+            visualization.innerHTML = '';
+            arr.forEach((value, idx) => {
+                const bar = document.createElement("div");
+                bar.style.height = value * 30 + "px";
+                bar.classList.add("bar");
+
+                const barLabel = document.createElement("span");
+                barLabel.textContent = value;
+                barLabel.classList.add("bar-label");
+
+                bar.appendChild(barLabel);
+                if (idx === index1 || idx === index2) {
+                    const arrow = document.createElement("div");
+                    arrow.classList.add("arrow");
+                    bar.appendChild(arrow);
+                }
+                visualization.appendChild(bar);
+            });
+        }
+
+        function updateDescription(index1, index2) {
+            const descText = document.getElementById("descText");
+            const currentBars = sortingSteps[currentStep]; // 取得當前步驟的 bars 狀態
+
+            if (index1 === -1 || index2 === -1) {
+                descText.textContent = "比較完成，無需交換。";
+            } else {
+                descText.textContent = `正在比較索引 ${index1} (值: ${currentBars[index1]}) 和索引 ${index2} (值: ${currentBars[index2]})。` + 
+                (currentBars[index1] > currentBars[index2] ? 
+                ` 由於 ${currentBars[index1]} > ${currentBars[index2]}，進行交換。` : 
+                ` 由於 ${currentBars[index1]} <= ${currentBars[index2]}，無需交換。`);
+            }
+        }
+
+        window.onload = generateRandomBars;
+    </script>
+</body>
+</html>
