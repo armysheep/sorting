@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorting Algorithm Visualizer</title>
     <style>
-        body {
+       body {
             font-family: Arial, sans-serif;
         }
 
@@ -131,6 +131,7 @@
             <label for="algorithm">Choose Algorithm:</label>
             <select id="algorithm">
                 <option value="bubbleSort">Bubble Sort</option>
+                <option value="selectionSort">Selection Sort</option> <!-- 新增 Selection Sort 選項 -->
             </select>
 
             <button id="randomizeArray">Random</button>
@@ -170,6 +171,7 @@
         });
 
         const visualization = document.getElementById("visualization");
+        const algorithmSelect = document.getElementById("algorithm");
         let bars = [];
         let currentStep = 0;
         let sortingSteps = [];
@@ -204,16 +206,22 @@
                 bars.push(value);
             });
 
-            sortingSteps = bubbleSortStep(bars);
+            // 根據選擇的算法生成排序步驟
+            if (algorithmSelect.value === "bubbleSort") {
+                sortingSteps = bubbleSortStep(bars);
+            } else if (algorithmSelect.value === "selectionSort") {
+                sortingSteps = selectionSortStep(bars);
+            }
             currentStep = 0;
             updateBars(bars, -1, -1);
 
-            // Reset the description and buttons
+            // Reset description and buttons
             document.getElementById("descText").textContent = "Here will be the explanation of each step.";
             nextBtn.disabled = false;
             prevBtn.disabled = true;
         }
 
+        // Bubble Sort 步驟
         function bubbleSortStep(arr) {
             let steps = [];
             let array = arr.slice();
@@ -230,6 +238,30 @@
             return steps;
         }
 
+        // Selection Sort 步驟
+        function selectionSortStep(arr) {
+            let steps = [];
+            let array = arr.slice();
+            swapIndices = [];
+            
+            for (let i = 0; i < array.length - 1; i++) {
+                let minIdx = i;
+                for (let j = i + 1; j < array.length; j++) {
+                    steps.push(array.slice());
+                    swapIndices.push([minIdx, j]);
+                    if (array[j] < array[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                if (minIdx !== i) {
+                    [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                    steps.push(array.slice()); // 加入交換後的陣列狀態
+                    swapIndices.push([i, minIdx]); // 加入交換的索引
+                }
+            }
+            return steps;
+        }
+
         document.getElementById("randomizeArray").addEventListener("click", generateRandomBars);
 
         nextBtn.addEventListener("click", () => {
@@ -239,14 +271,16 @@
                 updateDescription(index1, index2);
                 currentStep++;
 
-                // Disable prev button if at the start
                 prevBtn.disabled = currentStep <= 0;
             }
 
-            // If reached the end, disable next button and show completion message
+            // 如果到達排序步驟的最後一步，顯示完成訊息並禁用 nextBtn
             if (currentStep >= sortingSteps.length) {
                 document.getElementById("descText").textContent = "排序完成！";
                 nextBtn.disabled = true;
+
+                // 顯示排序完成的最終狀態
+                updateBars(sortingSteps[sortingSteps.length - 1], -1, -1);
             }
         });
 
@@ -289,16 +323,31 @@
         function updateDescription(index1, index2) {
             const descText = document.getElementById("descText");
             const currentBars = sortingSteps[currentStep];
+            const algorithm = algorithmSelect.value;
 
-            if (index1 === -1 || index2 === -1) {
-                descText.textContent = "比較完成，無需交換。";
-            } else {
-                descText.textContent = `正在比較索引 ${index1} (值: ${currentBars[index1]}) 和索引 ${index2} (值: ${currentBars[index2]})。` + 
-                (currentBars[index1] > currentBars[index2] ? 
-                ` 由於 ${currentBars[index1]} > ${currentBars[index2]}，進行交換。` : 
-                ` 由於 ${currentBars[index1]} <= ${currentBars[index2]}，無需交換。`);
+            if (algorithm === "bubbleSort") {
+                // Bubble Sort 的描述
+                if (index1 === -1 || index2 === -1) {
+                    descText.textContent = "比較完成，無需交換。";
+                } else {
+                    descText.textContent = `正在比較索引 ${index1} (值: ${currentBars[index1]}) 和索引 ${index2} (值: ${currentBars[index2]})。` +
+                    (currentBars[index1] > currentBars[index2] ? 
+                    ` 由於 ${currentBars[index1]} > ${currentBars[index2]}，進行交換。` : 
+                    ` 由於 ${currentBars[index1]} <= ${currentBars[index2]}，無需交換。`);
+                }
+            } else if (algorithm === "selectionSort") {
+                // Selection Sort 的描述
+                if (index1 === -1 || index2 === -1) {
+                    descText.textContent = "當前最小值已選擇完成，進行交換。";
+                } else {
+                    descText.textContent = `正在比較索引 ${index2} (值: ${currentBars[index2]}) 和目前的最小值索引 ${index1} (值: ${currentBars[index1]})。` + 
+                    (currentBars[index2] < currentBars[index1] ? 
+                    ` 發現更小的值 ${currentBars[index2]}，更新最小值索引。` : 
+                    ` 保持目前的最小值 ${currentBars[index1]}。`);
+                }
             }
         }
+
 
         window.onload = generateRandomBars;
     </script>
